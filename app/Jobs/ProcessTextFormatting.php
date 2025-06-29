@@ -90,8 +90,8 @@ class ProcessTextFormatting implements ShouldQueue
                 'estimated_reading_time' => $formattedData['estimated_reading_time']
             ]);
             
-            // Dispatch next phase job (PDF generation - will be created in Phase 5)
-            // ProcessPDFGeneration::dispatch($this->project);
+            // Dispatch next phase job (PDF generation)
+            ProcessPDFGeneration::dispatch($this->project);
             
             // For now, let's update status to indicate completion of this phase
             $this->project->update(['status' => 'completed']);

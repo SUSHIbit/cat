@@ -9,19 +9,43 @@
                 <p class="text-slate-600">{{ $project->original_filename }}</p>
             </div>
             <div class="flex space-x-3">
-                @if($project->status === 'completed' && $project->pdf_path)
-                    <a href="#" 
-                       class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200">
+                @if($project->hasPDF())
+                    <a href="{{ route('projects.download-pdf', $project) }}" 
+                       class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center">
+                        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
                         Download PDF
                     </a>
+                    <a href="{{ route('projects.preview-pdf', $project) }}" 
+                       target="_blank"
+                       class="border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center">
+                        <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        Preview PDF
+                    </a>
                 @endif
+                
+                @if($project->canRegeneratePDF())
+                    <form action="{{ route('projects.regenerate-pdf', $project) }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" 
+                                onclick="return confirm('Regenerate PDF? This will replace the current PDF file.')"
+                                class="border border-amber-300 text-amber-700 hover:bg-amber-50 px-4 py-2 rounded-lg font-medium transition-colors duration-200">
+                            Regenerate PDF
+                        </button>
+                    </form>
+                @endif
+                
                 <form action="{{ route('projects.destroy', $project) }}" method="POST" class="inline">
                     @csrf
                     @method('DELETE')
                     <button type="submit" 
-                            onclick="return confirm('Are you sure you want to delete this project?')"
+                            onclick="return confirm('Are you sure you want to delete this project? This action cannot be undone.')"
                             class="border border-red-300 text-red-700 hover:bg-red-50 px-4 py-2 rounded-lg font-medium transition-colors duration-200">
-                        Delete
+                        Delete Project
                     </button>
                 </form>
             </div>
@@ -63,6 +87,14 @@
                         <span class="text-slate-500">File Size:</span>
                         <span class="text-slate-700">{{ $project->file_size_human }}</span>
                     </div>
+                    
+                    @if($project->hasPDF())
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">PDF Size:</span>
+                            <span class="text-slate-700">{{ $project->pdf_size_human }}</span>
+                        </div>
+                    @endif
+                    
                     <div class="flex justify-between">
                         <span class="text-slate-500">Created:</span>
                         <span class="text-slate-700">{{ $project->created_at->format('M j, Y g:i A') }}</span>
@@ -97,6 +129,31 @@
                         </div>
                     @endif
                 </div>
+                
+                <!-- PDF Quick Actions -->
+                @if($project->hasPDF())
+                    <div class="mt-6 pt-4 border-t border-slate-200">
+                        <h3 class="text-sm font-medium text-slate-700 mb-3">📄 PDF Actions</h3>
+                        <div class="space-y-2">
+                            <a href="{{ route('projects.download-pdf', $project) }}" 
+                               class="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center">
+                                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                Download PDF
+                            </a>
+                            <a href="{{ route('projects.preview-pdf', $project) }}" 
+                               target="_blank"
+                               class="w-full border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center">
+                                <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                Preview PDF
+                            </a>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -127,7 +184,7 @@
                     <div class="prose prose-slate max-w-none">
                         <div class="flex items-center mb-6">
                             <span class="text-3xl mr-3">📖</span>
-                            <div>
+                            <div class="flex-1">
                                 <h3 class="text-xl font-bold text-slate-800 mb-1">
                                     {{ $project->formatted_title ?: 'Your Cat Story' }}
                                 </h3>
@@ -136,16 +193,63 @@
                                     • Estimated {{ ceil($project->formatted_narrative_word_count / 225) }} min read
                                 </p>
                             </div>
-                            @if($project->status === 'completed')
-                                <span class="ml-auto text-sm bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full">
-                                    ✅ Ready for Download
-                                </span>
-                            @elseif($project->status === 'generating_pdf')
-                                <span class="ml-auto text-sm bg-amber-100 text-amber-700 px-3 py-1 rounded-full">
-                                    🔄 Generating PDF
-                                </span>
-                            @endif
+                            <div class="flex flex-col items-end space-y-2">
+                                @if($project->status === 'completed')
+                                    <span class="text-sm bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full">
+                                        ✅ Complete
+                                    </span>
+                                    @if($project->hasPDF())
+                                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                                            📄 PDF Ready
+                                        </span>
+                                    @endif
+                                @elseif($project->status === 'generating_pdf')
+                                    <span class="text-sm bg-amber-100 text-amber-700 px-3 py-1 rounded-full">
+                                        🔄 Generating PDF
+                                    </span>
+                                @endif
+                            </div>
                         </div>
+                        
+                        <!-- PDF Status Banner -->
+                        @if($project->hasPDF())
+                            <div class="mb-6 p-4 bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-lg">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <div class="text-2xl mr-3">📄</div>
+                                        <div>
+                                            <h4 class="font-semibold text-emerald-800">PDF Ready for Download!</h4>
+                                            <p class="text-sm text-emerald-600">
+                                                Your beautifully formatted cat story is ready as a {{ $project->pdf_size_human }} PDF document.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <a href="{{ route('projects.download-pdf', $project) }}" 
+                                           class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+                                            Download
+                                        </a>
+                                        <a href="{{ route('projects.preview-pdf', $project) }}" 
+                                           target="_blank"
+                                           class="border border-emerald-300 text-emerald-700 hover:bg-emerald-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+                                            Preview
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        @elseif($project->status === 'generating_pdf')
+                            <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                                <div class="flex items-center">
+                                    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-amber-500 mr-3"></div>
+                                    <div>
+                                        <h4 class="font-medium text-amber-800">Generating PDF Document</h4>
+                                        <p class="text-sm text-amber-600">
+                                            Creating your beautifully formatted PDF... Estimated time: {{ $project->estimated_pdf_generation_time }} seconds
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                         
                         <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg p-6 border border-slate-200">
                             @if(strlen($project->formatted_narrative) <= 1500)
@@ -179,24 +283,6 @@
                                 </div>
                             @endif
                         </div>
-                        
-                        @if($project->status === 'completed')
-                            <div class="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
-                                <div class="flex items-center text-sm text-emerald-700">
-                                    <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                    </svg>
-                                    Your cat story is complete and ready for download as a beautifully formatted PDF!
-                                </div>
-                            </div>
-                        @elseif($project->status === 'generating_pdf')
-                            <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                                <div class="flex items-center text-sm text-amber-700">
-                                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-500 mr-2"></div>
-                                    Generating your beautiful PDF document... Almost ready!
-                                </div>
-                            </div>
-                        @endif
                     </div>
                     
                 @elseif($project->cat_narrative)

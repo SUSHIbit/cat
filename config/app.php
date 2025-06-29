@@ -175,6 +175,7 @@ return [
         App\Providers\DocumentParserServiceProvider::class,
         App\Providers\OpenAIServiceProvider::class,
         App\Providers\TextFormatterServiceProvider::class,
+        App\Providers\PDFGeneratorServiceProvider::class,
     ])->toArray(),
 
     /*

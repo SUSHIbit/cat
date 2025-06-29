@@ -46,6 +46,13 @@
                         <span class="text-slate-700">{{ $project->file_size_human }}</span>
                     </div>
                     
+                    @if($project->hasPDF())
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-500">PDF Size:</span>
+                            <span class="text-slate-700">{{ $project->pdf_size_human }}</span>
+                        </div>
+                    @endif
+                    
                     @if($project->formatted_narrative_word_count > 0)
                         <div class="flex justify-between text-sm">
                             <span class="text-slate-500">Story Length:</span>
@@ -133,26 +140,59 @@
                             <svg class="h-3 w-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                             </svg>
-                            Ready for download
+                            @if($project->hasPDF())
+                                📄 PDF ready for download
+                            @else
+                                Story completed
+                            @endif
                         </div>
                     </div>
                 @endif
 
                 <!-- Action Buttons -->
-                <div class="flex space-x-2">
-                    <a href="{{ route('projects.show', $project) }}" 
-                       class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium text-center transition-colors duration-200">
-                        @if($project->isProcessing())
-                            View Progress
-                        @else
-                            View Details
-                        @endif
-                    </a>
-                    @if($project->status === 'completed' && $project->pdf_path)
-                        <a href="#" 
-                           class="bg-slate-700 hover:bg-slate-800 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
-                            Download PDF
+                <div class="flex flex-col space-y-2">
+                    <!-- Primary Action Row -->
+                    <div class="flex space-x-2">
+                        <a href="{{ route('projects.show', $project) }}" 
+                           class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium text-center transition-colors duration-200">
+                            @if($project->isProcessing())
+                                View Progress
+                            @else
+                                View Details
+                            @endif
                         </a>
+                        
+                        @if($project->hasPDF())
+                            <a href="{{ route('projects.download-pdf', $project) }}" 
+                               class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center">
+                                <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                                PDF
+                            </a>
+                        @endif
+                    </div>
+                    
+                    <!-- Secondary Action Row (if needed) -->
+                    @if($project->hasPDF())
+                        <div class="flex space-x-2">
+                            <a href="{{ route('projects.preview-pdf', $project) }}" 
+                               target="_blank"
+                               class="flex-1 border border-slate-300 text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-lg text-xs font-medium text-center transition-colors duration-200">
+                                Preview PDF
+                            </a>
+                            
+                            @if($project->canRegeneratePDF())
+                                <form action="{{ route('projects.regenerate-pdf', $project) }}" method="POST" class="flex-1">
+                                    @csrf
+                                    <button type="submit" 
+                                            onclick="return confirm('Regenerate PDF? This will replace the current PDF file.')"
+                                            class="w-full border border-amber-300 text-amber-700 hover:bg-amber-50 px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
+                                        Regenerate
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     @endif
                 </div>
             </div>

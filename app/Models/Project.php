@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Project extends Model
 {
@@ -181,5 +182,75 @@ class Project extends Model
         };
         
         return now()->addMinutes($estimatedMinutes)->format('g:i A');
+    }
+
+    /**
+     * Check if PDF is available for download
+     */
+    public function hasPDF(): bool
+    {
+        return $this->status === 'completed' && 
+               !empty($this->pdf_path) && 
+               Storage::exists($this->pdf_path);
+    }
+
+    /**
+     * Get PDF file size in human readable format
+     */
+    public function getPdfSizeHumanAttribute(): ?string
+    {
+        if (!$this->hasPDF()) {
+            return null;
+        }
+        
+        $bytes = Storage::size($this->pdf_path);
+        $units = ['B', 'KB', 'MB', 'GB'];
+        
+        for ($i = 0; $bytes > 1024; $i++) {
+            $bytes /= 1024;
+        }
+        
+        return round($bytes, 2) . ' ' . $units[$i];
+    }
+
+    /**
+     * Get PDF download filename
+     */
+    public function getPdfDownloadFilenameAttribute(): string
+    {
+        $title = $this->formatted_title ?? $this->title;
+        
+        // Sanitize filename
+        $filename = preg_replace('/[^a-zA-Z0-9_\-\s]/', '', $title);
+        $filename = preg_replace('/\s+/', '_', $filename);
+        $filename = trim($filename, '_');
+        
+        if (empty($filename)) {
+            $filename = 'cat_narrative';
+        }
+        
+        return $filename . '_cat_narrative.pdf';
+    }
+
+    /**
+     * Check if PDF can be regenerated
+     */
+    public function canRegeneratePDF(): bool
+    {
+        return !empty($this->formatted_narrative) && 
+               !$this->isProcessing() && 
+               $this->status !== 'failed';
+    }
+
+    /**
+     * Get estimated PDF generation time
+     */
+    public function getEstimatedPdfGenerationTimeAttribute(): int
+    {
+        $wordCount = $this->formatted_narrative_word_count;
+        $baseTime = 5; // 5 seconds minimum
+        $wordFactor = max(1, $wordCount / 1000); // 1 second per 1000 words
+        
+        return $baseTime + (int)$wordFactor;
     }
 }
