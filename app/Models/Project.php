@@ -43,7 +43,7 @@ class Project extends Model
     {
         return match($this->status) {
             'uploaded' => 'text-slate-600',
-            'extracting_text', 'converting_to_cat', 'formatting', 'generating_pdf' => 'text-amber-600',
+            'extracting_text', 'text_extracted', 'converting_to_cat', 'formatting', 'generating_pdf' => 'text-amber-600',
             'completed' => 'text-emerald-600',
             'failed' => 'text-red-600',
             default => 'text-slate-600',

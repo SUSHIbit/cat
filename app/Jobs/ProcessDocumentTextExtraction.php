@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Project;
 use App\Services\DocumentParser;
+use App\Jobs\ProcessCatNarrativeConversion;
 use Exception;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -68,8 +69,8 @@ class ProcessDocumentTextExtraction implements ShouldQueue
                 'word_count' => str_word_count($extractedText)
             ]);
             
-            // Dispatch next phase job (this will be created in Phase 3)
-            // ProcessCatNarrativeConversion::dispatch($this->project);
+            // Dispatch next phase job
+            ProcessCatNarrativeConversion::dispatch($this->project);
             
         } catch (Exception $e) {
             Log::error("Text extraction failed for project: {$this->project->id}", [

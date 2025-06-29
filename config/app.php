@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'Cat Narrative Generator'),
 
     /*
     |--------------------------------------------------------------------------
@@ -168,7 +168,12 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        
+        /*
+         * Custom Service Providers for Cat Narrative Generator...
+         */
         App\Providers\DocumentParserServiceProvider::class,
+        App\Providers\OpenAIServiceProvider::class,
     ])->toArray(),
 
     /*
