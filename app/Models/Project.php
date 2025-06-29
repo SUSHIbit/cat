@@ -55,6 +55,7 @@ class Project extends Model
         return match($this->status) {
             'uploaded' => 'Uploaded',
             'extracting_text' => 'Extracting Text',
+            'text_extracted' => 'Text Extracted',
             'converting_to_cat' => 'Converting to Cat Speak',
             'formatting' => 'Formatting Story',
             'generating_pdf' => 'Generating PDF',

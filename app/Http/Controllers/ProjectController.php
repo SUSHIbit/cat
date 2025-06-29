@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Project;
+use App\Jobs\ProcessDocumentTextExtraction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -43,8 +44,11 @@ class ProjectController extends Controller
             'status' => 'uploaded',
         ]);
 
+        // Dispatch text extraction job
+        ProcessDocumentTextExtraction::dispatch($project);
+
         return redirect()->route('projects.show', $project)
-            ->with('success', 'Document uploaded successfully! Processing will begin shortly.');
+            ->with('success', 'Document uploaded successfully! Text extraction is starting...');
     }
 
     public function show(Project $project)
