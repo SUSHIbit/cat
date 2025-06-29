@@ -41,6 +41,20 @@
                             {{ $project->status_display }}
                         </span>
                     </div>
+                    
+                    @if($project->isProcessing())
+                        <div class="w-full bg-slate-200 rounded-full h-2">
+                            <div class="bg-slate-600 h-2 rounded-full transition-all duration-300" 
+                                 style="width: {{ $project->processing_progress }}%"></div>
+                        </div>
+                        <div class="text-xs text-slate-500 text-center">
+                            {{ $project->processing_progress }}% complete
+                            @if($project->estimated_completion)
+                                • Est. completion: {{ $project->estimated_completion }}
+                            @endif
+                        </div>
+                    @endif
+                    
                     <div class="flex justify-between">
                         <span class="text-slate-500">File Type:</span>
                         <span class="text-slate-700">{{ strtoupper($project->file_type) }}</span>
@@ -63,16 +77,23 @@
                     @if($project->extracted_text)
                         <div class="pt-3 border-t border-slate-200">
                             <div class="flex justify-between">
-                                <span class="text-slate-500">Word Count:</span>
-                                <span class="text-slate-700">{{ str_word_count($project->extracted_text) }}</span>
+                                <span class="text-slate-500">Original Words:</span>
+                                <span class="text-slate-700">{{ number_format($project->extracted_text_word_count) }}</span>
                             </div>
                         </div>
                     @endif
                     
                     @if($project->cat_narrative)
                         <div class="flex justify-between">
-                            <span class="text-slate-500">Cat Story Length:</span>
-                            <span class="text-slate-700">{{ str_word_count($project->cat_narrative) }} words</span>
+                            <span class="text-slate-500">Cat Story Words:</span>
+                            <span class="text-slate-700">{{ number_format($project->cat_narrative_word_count) }}</span>
+                        </div>
+                    @endif
+
+                    @if($project->formatted_narrative)
+                        <div class="flex justify-between">
+                            <span class="text-slate-500">Formatted Words:</span>
+                            <span class="text-slate-700">{{ number_format($project->formatted_narrative_word_count) }}</span>
                         </div>
                     @endif
                 </div>
@@ -101,14 +122,92 @@
                         </div>
                     </div>
                     
+                @elseif($project->hasFormattedNarrative())
+                    <!-- Formatted Story Display -->
+                    <div class="prose prose-slate max-w-none">
+                        <div class="flex items-center mb-6">
+                            <span class="text-3xl mr-3">📖</span>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-1">
+                                    {{ $project->formatted_title ?: 'Your Cat Story' }}
+                                </h3>
+                                <p class="text-sm text-slate-500">
+                                    {{ number_format($project->formatted_narrative_word_count) }} words
+                                    • Estimated {{ ceil($project->formatted_narrative_word_count / 225) }} min read
+                                </p>
+                            </div>
+                            @if($project->status === 'completed')
+                                <span class="ml-auto text-sm bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full">
+                                    ✅ Ready for Download
+                                </span>
+                            @elseif($project->status === 'generating_pdf')
+                                <span class="ml-auto text-sm bg-amber-100 text-amber-700 px-3 py-1 rounded-full">
+                                    🔄 Generating PDF
+                                </span>
+                            @endif
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg p-6 border border-slate-200">
+                            @if(strlen($project->formatted_narrative) <= 1500)
+                                <div class="formatted-story whitespace-pre-line">
+                                    {!! nl2br(e($project->formatted_narrative)) !!}
+                                </div>
+                            @else
+                                <div id="storyPreview" class="formatted-story whitespace-pre-line">
+                                    {!! nl2br(e(Str::limit($project->formatted_narrative, 1500))) !!}
+                                </div>
+                                <div class="mt-4 pt-4 border-t border-slate-300">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-slate-500 text-sm">Showing first 1500 characters</span>
+                                        <button onclick="toggleFullStory()" 
+                                                class="text-slate-600 hover:text-slate-800 text-sm font-medium underline">
+                                            Show Full Story
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div id="fullStory" class="hidden mt-4 pt-4 border-t border-slate-300">
+                                    <div class="formatted-story whitespace-pre-line">
+                                        {!! nl2br(e(substr($project->formatted_narrative, 1500))) !!}
+                                    </div>
+                                    <div class="mt-4">
+                                        <button onclick="toggleFullStory()" 
+                                                class="text-slate-600 hover:text-slate-800 text-sm font-medium underline">
+                                            Show Less
+                                        </button>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                        
+                        @if($project->status === 'completed')
+                            <div class="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                                <div class="flex items-center text-sm text-emerald-700">
+                                    <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                    Your cat story is complete and ready for download as a beautifully formatted PDF!
+                                </div>
+                            </div>
+                        @elseif($project->status === 'generating_pdf')
+                            <div class="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                                <div class="flex items-center text-sm text-amber-700">
+                                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-500 mr-2"></div>
+                                    Generating your beautiful PDF document... Almost ready!
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                    
                 @elseif($project->cat_narrative)
+                    <!-- Raw Cat Narrative (before formatting) -->
                     <div class="prose prose-slate max-w-none">
                         <div class="flex items-center mb-4">
                             <span class="text-2xl mr-2">🐱</span>
                             <h3 class="text-lg font-medium text-slate-800 mb-0">Cat Narrative</h3>
-                            @if($project->status === 'completed')
-                                <span class="ml-auto text-sm bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">
-                                    ✅ Complete
+                            @if($project->status === 'formatting')
+                                <span class="ml-auto text-sm bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
+                                    🔄 Formatting into Story
                                 </span>
                             @endif
                         </div>
@@ -140,19 +239,18 @@
                             @endif
                         </div>
                         
-                        @if($project->status === 'completed')
-                            <div class="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                                <div class="flex items-center text-sm text-emerald-700">
-                                    <svg class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                                    </svg>
-                                    Cat narrative generation complete! Ready for PDF download.
+                        @if($project->status === 'formatting')
+                            <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                <div class="flex items-center text-sm text-amber-700">
+                                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-amber-500 mr-2"></div>
+                                    Formatting into a structured story with chapters and styling...
                                 </div>
                             </div>
                         @endif
                     </div>
                     
                 @elseif($project->extracted_text)
+                    <!-- Extracted Text Preview -->
                     <div class="prose prose-slate max-w-none">
                         <div class="flex items-center mb-4">
                             <span class="text-2xl mr-2">📄</span>
@@ -186,6 +284,7 @@
                     </div>
                     
                 @else
+                    <!-- Processing Status -->
                     <div class="text-center py-12">
                         <div class="text-6xl mb-4">🐱</div>
                         <h3 class="text-lg font-medium text-slate-700 mb-2">
@@ -205,7 +304,7 @@
                             @endif
                         </p>
                         
-                        @if(in_array($project->status, ['extracting_text', 'converting_to_cat', 'formatting', 'generating_pdf']))
+                        @if($project->isProcessing())
                             <div class="inline-flex items-center text-sm text-slate-500">
                                 <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-slate-400 mr-2"></div>
                                 This may take a few minutes depending on document size...
@@ -218,20 +317,29 @@
     </div>
 </div>
 
-@if(strlen($project->cat_narrative ?? '') > 800)
+@if(strlen($project->cat_narrative ?? '') > 800 || strlen($project->formatted_narrative ?? '') > 1500)
 <script>
 function toggleFullText() {
     const fullText = document.getElementById('fullText');
-    if (fullText.classList.contains('hidden')) {
+    if (fullText && fullText.classList.contains('hidden')) {
         fullText.classList.remove('hidden');
-    } else {
+    } else if (fullText) {
         fullText.classList.add('hidden');
+    }
+}
+
+function toggleFullStory() {
+    const fullStory = document.getElementById('fullStory');
+    if (fullStory && fullStory.classList.contains('hidden')) {
+        fullStory.classList.remove('hidden');
+    } else if (fullStory) {
+        fullStory.classList.add('hidden');
     }
 }
 </script>
 @endif
 
-@if(in_array($project->status, ['extracting_text', 'converting_to_cat', 'formatting', 'generating_pdf']))
+@if($project->isProcessing())
 <script>
 // Auto-refresh page every 10 seconds for processing status updates
 setTimeout(function() {
@@ -239,4 +347,34 @@ setTimeout(function() {
 }, 10000);
 </script>
 @endif
+
+<style>
+.formatted-story {
+    line-height: 1.7;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.formatted-story h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+}
+
+.formatted-story h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.formatted-story h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #475569;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+</style>
 @endsection

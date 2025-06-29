@@ -73,7 +73,7 @@ class ProcessCatNarrativeConversion implements ShouldQueue
             // Save the cat narrative
             $this->project->update([
                 'cat_narrative' => $catNarrative,
-                'status' => 'formatting'
+                'status' => 'converting_to_cat' // Keep status for formatting job to pick up
             ]);
             
             Log::info("Cat narrative conversion completed for project: {$this->project->id}", [
@@ -81,11 +81,8 @@ class ProcessCatNarrativeConversion implements ShouldQueue
                 'word_count' => str_word_count($catNarrative)
             ]);
             
-            // Dispatch next phase job (this will be created in Phase 4)
-            // ProcessTextFormatting::dispatch($this->project);
-            
-            // For now, let's update status to indicate completion of this phase
-            $this->project->update(['status' => 'completed']);
+            // Dispatch next phase job (text formatting)
+            ProcessTextFormatting::dispatch($this->project);
             
         } catch (Exception $e) {
             Log::error("Cat narrative conversion failed for project: {$this->project->id}", [
